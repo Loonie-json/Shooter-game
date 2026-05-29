@@ -45,6 +45,9 @@ O projeto demonstra conceitos sólidos de lógica de desenvolvimento de jogos:
 
 ## 🚀 Como Executar o Projeto
 
+link da pagina do jogo:
+https://loonie-json.github.io/Shooter-game/
+
 Como o jogo foi feito em uma única página web estruturada, executá-lo é extremamente simples:
 
 1. Faça o clone do repositório ou baixe o arquivo HTML:
