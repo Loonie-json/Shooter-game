@@ -10,15 +10,6 @@
 
 ---
 
-## 📸 Visual do Jogo
-
-| HUD & Arena Estilizada | Gameplay & Bossfights |
-| :---: | :---: |
-| <img src="https://via.placeholder.com/450x250.png?text=Interface+Neon+Minimalista" width="100%"> | <img src="https://via.placeholder.com/450x250.png?text=Ataques+Bullet+Hell+Ativos" width="100%"> |
-> *Dica: Substitua estas imagens por GIFs do seu jogo em ação para deixar o repositório incrível!*
-
----
-
 ## ⚡ Funcionalidades Principais
 
 * **🕹️ Engine Pura (Vanilla):** Desenvolvido sem frameworks ou bibliotecas externas. Apenas manipulação de DOM de alta performance e `requestAnimationFrame`.
@@ -58,4 +49,11 @@ Como o jogo foi feito em uma única página web estruturada, executá-lo é extr
 
 1. Faça o clone do repositório ou baixe o arquivo HTML:
    ```bash
-   git clone [https://github.com/seu-usuario/nome-do-repositorio.git](https://github.com/seu-usuario/nome-do-repositorio.git)
+   git clone https://github.com/Loonie-json/Shooter-game
+   cd Shooter-game
+   ```
+2. Use:
+   ```bash
+   python -m http.server 8000
+   ```
+   ou use o live server do seu ambiente de codigo.
