@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLOCOS RPG</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f10;
+  --surface:#1a1a1e;
+  --border:#2e2e38;
+  --accent:#c8f53a;
+  --accent-dim:#8fb029;
+  --red:#f53a3a;
+  --red-dim:#a01010;
+  --blue:#3ab4f5;
+  --text:#e8e8e0;
+  --text-muted:#666672;
+  --tile:40px;
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Mono',monospace;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+/* ── HUD ── */
+#hud{
+  padding:10px 16px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+  display:flex;
+  align-items:center;
+  gap:20px;
+  flex-shrink:0;
+  z-index:20;
+}
+#hud h1{
+  font-family:'Syne',sans-serif;
+  font-size:17px;
+  font-weight:800;
+  color:var(--accent);
+  letter-spacing:-0.02em;
+  white-space:nowrap;
+}
+.bar-wrap{display:flex;flex-direction:column;gap:3px}
+.bar-label{font-size:9px;letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase}
+.bar{width:120px;height:10px;background:var(--border);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .2s}
+#hp-fill{background:var(--accent)}
+#xp-fill{background:var(--blue)}
+.stat{font-size:12px;color:var(--text-muted)}
+.stat span{color:var(--text);font-weight:500}
+#level-tag{
+  font-family:'Syne',sans-serif;
+  font-weight:800;
+  font-size:20px;
+  color:var(--accent);
+  margin-left:auto;
+}
+#kbd-hint{
+  font-size:10px;
+  color:var(--text-muted);
+  display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+}
+kbd{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:3px;
+  padding:1px 6px;
+  font-size:10px;
+  font-family:'DM Mono',monospace;
+  color:var(--accent);
+}
+
+/* ── ARENA ── */
+#arena{
+  position:relative;
+  flex:1;
+  overflow:hidden;
+  background:
+    linear-gradient(var(--border) 1px,transparent 1px),
+    linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:var(--tile) var(--tile);
+  background-color:var(--bg);
+}
+
+/* ── ENTIDADES ── */
+.entity{
+  position:absolute;
+  width:38px;height:38px;
+  border-radius:8px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  font-size:9px;font-weight:500;
+  border:2px solid transparent;
+  transition:border-color .1s;
+  pointer-events:none;
+  z-index:5;
+}
+.entity .ico{font-size:18px;line-height:1}
+.entity .etag{font-size:8px;letter-spacing:.06em;opacity:.7;text-transform:uppercase}
+
+#player{
+  background:#1e2d0f;
+  color:var(--accent);
+  border-color:var(--accent-dim);
+  z-index:10;
+  transition:none;
+}
+#player.hit{border-color:var(--red)!important;background:#2d0f0f}
+
+.enemy{
+  background:#2d0f0f;
+  color:var(--red);
+  border-color:var(--red-dim);
+}
+.enemy.aggro{border-color:var(--red)!important}
+.enemy.dead{opacity:0;transform:scale(.5);transition:opacity .3s,transform .3s}
+
+/* ── HP BAR sobre inimigo ── */
+.ebar-wrap{
+  position:absolute;
+  top:-8px;left:50%;
+  transform:translateX(-50%);
+  width:36px;height:4px;
+  background:var(--border);
+  border-radius:2px;overflow:hidden;
+}
+.ebar-fill{height:100%;background:var(--red);border-radius:2px;transition:width .15s}
+
+/* ── PROJÉTIL ── */
+.bullet{
+  position:absolute;
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--accent);
+  z-index:8;
+  pointer-events:none;
+}
+.bullet.enemy-bullet{background:var(--red)}
+
+/* ── FLOATERS (dano) ── */
+.floater{
+  position:absolute;
+  font-size:13px;font-weight:700;
+  pointer-events:none;
+  z-index:30;
+  animation:float-up .9s ease-out forwards;
+}
+@keyframes float-up{
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-36px) scale(.8)}
+}
+
+/* ── LOG ── */
+#log{
+  position:absolute;
+  bottom:8px;left:8px;
+  width:260px;
+  background:rgba(15,15,16,.85);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:6px 10px;
+  font-size:10px;
+  line-height:1.7;
+  color:var(--text-muted);
+  pointer-events:none;
+  z-index:20;
+  max-height:90px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  gap:0;
+}
+.log-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-line.accent{color:var(--accent)}
+.log-line.danger{color:var(--red)}
+.log-line.info{color:var(--blue)}
+
+/* ── GAME OVER / WIN ── */
+#overlay{
+  position:absolute;
+  inset:0;
+  display:none;
+  flex-direction:column;
+  align-items:center;justify-content:center;
+  background:rgba(15,15,16,.92);
+  z-index:50;
+  gap:16px;
+}
+#overlay.show{display:flex}
+#overlay h2{
+  font-family:'Syne',sans-serif;
+  font-size:42px;font-weight:800;
+  letter-spacing:-.03em;
+}
+#overlay.gameover h2{color:var(--red)}
+#overlay.win h2{color:var(--accent)}
+#overlay p{font-size:13px;color:var(--text-muted)}
+#overlay button{
+  margin-top:8px;
+  background:transparent;
+  border:1px solid var(--accent);
+  color:var(--accent);
+  padding:8px 24px;
+  font-family:'DM Mono',monospace;
+  font-size:13px;
+  border-radius:5px;
+  cursor:pointer;
+  transition:background .15s;
+}
+#overlay button:hover{background:rgba(200,245,58,.1)}
+
+/* ── WAVE TAG ── */
+#wave-tag{
+  position:absolute;
+  top:12px;right:12px;
+  font-family:'Syne',sans-serif;
+  font-size:13px;font-weight:800;
+  color:var(--text-muted);
+  z-index:20;
+}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <h1>BLOCOS RPG</h1>
+  <div class="bar-wrap">
+    <div class="bar-label">HP</div>
+    <div class="bar"><div class="bar-fill" id="hp-fill" style="width:100%"></div></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label">XP</div>
+    <div class="bar"><div class="bar-fill" id="xp-fill" style="width:0%"></div></div>
+  </div>
+  <div class="stat">HP <span id="hp-val">100</span></div>
+  <div class="stat">ATK <span id="atk-val">20</span></div>
+  <div class="stat">kills <span id="kill-val">0</span></div>
+  <div id="level-tag">Lv.1</div>
+  <div id="kbd-hint">
+    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> mover
+    &nbsp;<kbd>Espaço</kbd> atacar
+    &nbsp;<kbd>Shift</kbd> dash
+  </div>
+</div>
+
+<div id="arena">
+  <div id="player" class="entity">
+    <div class="ico">&#9632;</div>
+    <div class="etag">YOU</div>
+  </div>
+  <div id="log"></div>
+  <div id="wave-tag">WAVE 1</div>
+  <div id="overlay">
+    <h2 id="overlay-title">GAME OVER</h2>
+    <p id="overlay-sub">você foi derrotado</p>
+    <button onclick="restartGame()">&#9654; jogar de novo</button>
+  </div>
+</div>
+
+<script>
+const arena = document.getElementById('arena');
+const playerEl = document.getElementById('player');
+const hpFill = document.getElementById('hp-fill');
+const xpFill = document.getElementById('xp-fill');
+const hpVal = document.getElementById('hp-val');
+const atkVal = document.getElementById('atk-val');
+const killVal = document.getElementById('kill-val');
+const levelTag = document.getElementById('level-tag');
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlay-title');
+const overlaySub = document.getElementById('overlay-sub');
+const waveTag = document.getElementById('wave-tag');
+const logEl = document.getElementById('log');
+
+// ── STATE ──
+let P = {};
+let enemies = [];
+let bullets = [];
+let keys = {};
+let gameRunning = false;
+let animId;
+let lastTime = 0;
+let waveNum = 0;
+let waveClear = false;
+const MAX_WAVES = 10;
+
+function initPlayer() {
+  const r = arena.getBoundingClientRect();
+  P = {
+    x: r.width/2 - 19, y: r.height/2 - 19,
+    hp: 100, maxHp: 100,
+    atk: 20, speed: 3.2,
+    xp: 0, xpNext: 60,
+    level: 1, kills: 0,
+    shootCd: 0, dashCd: 0,
+    invincible: 0,
+    dx: 0, dy: 0,
+  };
+}
+
+// ── ENEMY TYPES ──
+const ETYPES = [
+  { tag:'Makako', ico:'▲', hp:40,  atk:10,  spd:1.1, xp:15, size:38 },
+  { tag:'Bruto', ico:'◆', hp:100, atk:25, spd:0.7, xp:35, size:42 },
+  { tag:'Gnomo',  ico:'▶', hp:25,  atk:15,  spd:2.0, xp:20, size:32 },
+  { tag:'Gandalf',  ico:'✦', hp:55,  atk:40, spd:0.9, xp:30, size:36, shoots:true },
+  { tag:'VORTEX', ico:'🌀', hp:300, atk:60, spd:0.8,   xp:200, size:64 },
+  { tag:'VOID',   ico:'🌌', hp:700, atk:100, spd:1,  xp:999, size:70 }
+];
+
+function spawnEnemy(type) {
+  const r = arena.getBoundingClientRect();
+  const t = ETYPES[type];
+  
+  // Posicionamento padrão na borda
+  const edge = Math.floor(Math.random()*4);
+  let x, y;
+  if(edge===0){x=Math.random()*r.width;y=-48}
+  else if(edge===1){x=r.width+8;y=Math.random()*r.height}
+  else if(edge===2){x=Math.random()*r.width;y=r.height+8}
+  else{x=-48;y=Math.random()*r.height}
+
+  // Se for Boss, joga no centro exato da arena temporariamente
+  if(t.tag === 'VORTEX' || t.tag === 'VOID') {
+    x = r.width / 2 - t.size / 2;
+    y = r.height / 2 - t.size / 2;
+  }
+
+  const el = document.createElement('div');
+  el.className = 'entity enemy';
+  el.style.width = t.size+'px';
+  el.style.height = t.size+'px';
+
+  const ebar = document.createElement('div');
+  ebar.className='ebar-wrap';
+  const ebarFill = document.createElement('div');
+  ebarFill.className='ebar-fill';
+  ebar.appendChild(ebarFill);
+
+  el.innerHTML = `<div class="ico">${t.ico}</div><div class="etag">${t.tag}</div>`;
+  el.appendChild(ebar);
+  arena.appendChild(el);
+  
+  const scale = 1 + (waveNum - 1) * 0.3;
+  const e = {
+    el, ebarFill,
+    x, y, 
+    hp: Math.floor(t.hp * scale), 
+    maxHp: Math.floor(t.hp * scale),
+    atk: Math.floor(t.atk * scale), 
+    spd: t.spd, xp: t.xp,
+    size: t.size, tag: t.tag,
+    shoots: t.shoots||false,
+    shootCd: 0,
+    angleOffset: 0,
+    teleportCd: 180,
+    aggro: false, alive: true,
+    hitCd: 0,
+  };
+  
+  enemies.push(e);
+  return e;
+}
+
+function spawnWave(num) {
+  waveTag.textContent = 'WAVE ' + num;
+  waveClear = false;
+
+  if (num === 5) {
+    addLog(`⚠️ BOSS VORTEX SE APROXIMA! ⚠️`, 'danger');
+    spawnEnemy(4);
+    return;
+  }
+  
+  if (num === 10) {
+    addLog(`🌌 O VAZIO ABSORVE A REALIDADE: VOID! 🌌`, 'danger');
+    spawnEnemy(5);
+    return;
+  }
+
+  // Ondas normais
+  const count = 3 + num * 2;
+  const hasBrute = num >= 2;
+  const hasMage  = num >= 3;
+  for(let i=0;i<count;i++){
+    let t;
+    const r = Math.random();
+    if(hasMage && r<0.15) t=3;
+    else if(hasBrute && r<0.25) t=1;
+    else if(r<0.45) t=2;
+    else t=0;
+    setTimeout(()=> {
+      if(gameRunning && waveNum === num) spawnEnemy(t);
+    }, i*300);
+  }
+  addLog(`— wave ${num} iniciada —`,'info');
+}
+
+// ── LOG ──
+const logLines = [];
+function addLog(msg, cls='') {
+  logLines.push({msg,cls});
+  if(logLines.length>4) logLines.shift();
+  logEl.innerHTML = logLines.map(l=>`<div class="log-line ${l.cls}">${l.msg}</div>`).join('');
+}
+
+// ── FLOATERS ──
+function floater(x, y, text, color='var(--accent)') {
+  const f = document.createElement('div');
+  f.className = 'floater';
+  f.style.left = (x-10)+'px';
+  f.style.top  = (y-10)+'px';
+  f.style.color = color;
+  f.textContent = text;
+  arena.appendChild(f);
+  setTimeout(()=>f.remove(), 900);
+}
+
+// ── BULLETS ──
+function shootBullet(x, y, dx, dy, fromEnemy=false, dmg=20) {
+  const b = document.createElement('div');
+  b.className = 'bullet'+(fromEnemy?' enemy-bullet':'');
+  b.style.left = x+'px';
+  b.style.top  = y+'px';
+  arena.appendChild(b);
+  bullets.push({el:b, x, y, dx, dy, fromEnemy, dmg, alive:true});
+}
+
+function playerShoot() {
+  if(P.shootCd>0 || !gameRunning) return;
+  let nearest=null, dist=Infinity;
+  for(const e of enemies){
+    if(!e.alive) continue;
+    const dx=e.x-P.x, dy=e.y-P.y;
+    const d=Math.hypot(dx,dy);
+    if(d<dist){dist=d;nearest=e;}
+  }
+  if(!nearest) return;
+  const dx=nearest.x-P.x, dy=nearest.y-P.y;
+  const len=Math.hypot(dx,dy)||1;
+  shootBullet(P.x+15, P.y+15, dx/len*7, dy/len*7, false);
+  P.shootCd = 18;
+}
+
+// ── DASH ──
+function playerDash() {
+  if(P.dashCd>0 || !gameRunning) return;
+  let dx=0,dy=0;
+  if(keys['w']||keys['arrowup'])    dy=-1;
+  if(keys['s']||keys['arrowdown'])  dy= 1;
+  if(keys['a']||keys['arrowleft'])  dx=-1;
+  if(keys['d']||keys['arrowright']) dx= 1;
+  if(dx===0&&dy===0){ dy=-1; }
+  const len=Math.hypot(dx,dy)||1;
+  P.x += dx/len*80;
+  P.y += dy/len*80;
+  P.invincible = 18;
+  P.dashCd = 60;
+  addLog('dash!','accent');
+}
+
+// ── XP / LEVEL ──
+function gainXp(amount) {
+  P.xp += amount;
+  if(P.xp >= P.xpNext) {
+    P.xp -= P.xpNext;
+    P.level++;
+    P.xpNext = Math.floor(P.xpNext*1.5);
+    P.atk += 8;
+    P.maxHp += 20;
+    P.hp = Math.min(P.hp+30, P.maxHp);
+    P.speed += 0.2;
+    levelTag.textContent = 'Lv.'+P.level;
+    atkVal.textContent = P.atk;
+    addLog(`level up! → Lv.${P.level} atk+8`,'accent');
+    floater(P.x, P.y-10, 'LEVEL UP!','var(--accent)');
+  }
+}
+
+// ── CLAMP ──
+function clampPos(obj, size) {
+  const r = arena.getBoundingClientRect();
+  obj.x = Math.max(0, Math.min(r.width-size,  obj.x));
+  obj.y = Math.max(0, Math.min(r.height-size, obj.y));
+}
+
+// ── UPDATE ──
+async function update(dt) {
+  if(!gameRunning) return;
+
+  // player input
+  let dx=0,dy=0;
+  if(keys['w']||keys['arrowup'])    dy-=1;
+  if(keys['s']||keys['arrowdown'])  dy+=1;
+  if(keys['a']||keys['arrowleft'])  dx-=1;
+  if(keys['d']||keys['arrowright']) dx+=1;
+  const len=Math.hypot(dx,dy)||1;
+  if(dx||dy){P.x+=dx/len*P.speed*dt*0.06; P.y+=dy/len*P.speed*dt*0.06;}
+  clampPos(P, 38);
+  playerEl.style.left=P.x+'px';
+  playerEl.style.top =P.y+'px';
+
+  if(P.shootCd>0) P.shootCd -= dt*0.06;
+  if(P.dashCd>0)  P.dashCd  -= dt*0.06;
+  if(P.invincible>0) P.invincible -= dt*0.06;
+
+  // enemies
+  const r = arena.getBoundingClientRect();
+  for(const e of enemies) {
+    if(!e.alive) continue;
+    if(e.hitCd>0) e.hitCd -= dt*0.06;
+
+    const edx = P.x - e.x, edy = P.y - e.y;
+    const elen = Math.hypot(edx,edy)||1;
+    const aggroDist = Math.hypot(edx,edy);
+
+    
+      // Movimento básico em direção ao jogador
+      e.x += edx/elen * e.spd * dt*0.06;
+      e.y += edy/elen * e.spd * dt*0.06;
+    
+      if (e.tag === 'VORTEX') {
+        // Efeito Gravidade / Buraco negro ativo
+        if (aggroDist < 500) {
+          P.x -= (edx / elen) * 0.55;
+          P.y -= (edy / elen) * 0.55;
+        }
+      }
+      if (e.tag === 'VOID') {
+        e.teleportCd -= dt*0.06;
+        if (e.teleportCd <= 0) {
+          floater(e.x + e.size/2, e.y, 'BUG', 'var(--red)');
+          e.x = Math.random() * (r.width - e.size);
+          e.y = Math.random() * (r.height - e.size);
+          e.teleportCd = 140;
+        }
+      }
+    
+
+    e.el.style.left = e.x+'px';
+    e.el.style.top  = e.y+'px';
+
+    if(aggroDist<280 && !e.aggro){ e.aggro=true; e.el.classList.add('aggro'); }
+
+    // Sistema de tiros Bullet Hell corrigido
+    e.shootCd -= dt*0.06;
+    if(e.shootCd <= 0) {
+      if(e.shoots) {
+        const bl=edx/elen, bm=edy/elen;
+        shootBullet(e.x+e.size/2-4, e.y+e.size/2-4, bl*4.5, bm*4.5, true, e.atk);
+        e.shootCd = 70;
+      }
+      else if (e.tag === 'VORTEX') {
+        e.angleOffset += 0.25;
+        const totalP = 5; 
+        for (let i = 0; i < totalP; i++) {
+          const angle = e.angleOffset + (i * Math.PI * 2 / totalP);
+          shootBullet(e.x + e.size/2 - 4, e.y + e.size/2 - 4, Math.cos(angle) * 4.8, Math.sin(angle) * 4.8, true, e.atk);
+        }
+        e.shootCd = 10; 
+      }
+      else if (e.tag === 'VOID') {
+        const pattern = Math.random();
+        if (pattern < 0.5) {
+          // Onda 360 Graus
+          for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 6) {
+            shootBullet(e.x + e.size/2 - 4, e.y + e.size/2 - 4, Math.cos(angle) * 6.2, Math.sin(angle) * 6.2, true, e.atk);
+          }
+          e.shootCd = 40;
+        } else {
+          // Sequência Laser Rápida
+          for(let i=0; i<3; i++) {
+            setTimeout(() => {
+              if(!e.alive || !gameRunning) return;
+              const fDx = P.x - (e.x + e.size/2), fDy = P.y - (e.y + e.size/2);
+              const fLen = Math.hypot(fDx, fDy) || 1;
+              shootBullet(e.x + e.size/2 - 4, e.y + e.size/2 - 4, (fDx/fLen) * 8.5, (fDy/fLen) * 8.5, true, e.atk);
+            }, i * 150);
+          }
+          e.shootCd = 60;
+        }
+      }
+    }
+
+    // Contato Físico
+    if(P.invincible<=0 && aggroDist < (e.size/2 + 15)) {
+      if(e.hitCd<=0){
+        const dmg = e.atk;
+        P.hp -= dmg;
+        P.invincible = 30;
+        e.hitCd = 40;
+        floater(P.x, P.y-10, '-'+dmg, 'var(--red)');
+        playerEl.classList.add('hit');
+        setTimeout(()=>playerEl.classList.remove('hit'),200);
+        if(P.hp<=0){ endGame(false); return; }
+        updateHud();
+      }
+    }
+  }
+
+  // Balas mecânica de movimento
+  for(const b of bullets) {
+    if(!b.alive) continue;
+    b.x += b.dx * dt*0.06;
+    b.y += b.dy * dt*0.06;
+    b.el.style.left = b.x+'px';
+    b.el.style.top  = b.y+'px';
+
+    if(b.x<-30||b.x>r.width+30||b.y<-30||b.y>r.height+30){
+      b.alive=false; b.el.remove(); continue;
+    }
+
+    if(!b.fromEnemy) {
+      for(const e of enemies){
+        if(!e.alive) continue;
+        if(b.x>e.x && b.x<e.x+e.size && b.y>e.y && b.y<e.y+e.size){
+          const dmg = P.atk + Math.floor(Math.random()*8);
+          e.hp -= dmg;
+          floater(e.x, e.y-8, '-'+dmg,'var(--accent)');
+          b.alive=false; b.el.remove();
+          e.ebarFill.style.width = Math.max(0,e.hp/e.maxHp*100)+'%';
+          if(e.hp<=0) killEnemy(e);
+          break;
+        }
+      }
+    } else {
+      if(P.invincible<=0){
+        if(b.x>P.x && b.x<P.x+38 && b.y>P.y && b.y<P.y+38){
+          let safeDmg = b.dmg || 20
+          const dmg = Math.floor(safeDmg+Math.random()*8);
+          P.hp -= dmg;
+          P.invincible=15;
+          floater(P.x, P.y-10,'-'+dmg,'var(--red)');
+          playerEl.classList.add('hit');
+          setTimeout(()=>playerEl.classList.remove('hit'),150);
+          b.alive=false; b.el.remove();
+          if(P.hp<=0){ endGame(false); return; }
+          updateHud();
+        }
+      }
+    }
+  }
+
+  // Passagem de Ondas
+  const alive = enemies.filter(e=>e.alive);
+  if(alive.length===0 && gameRunning && !waveClear) {
+    waveClear = true;
+    if(waveNum < MAX_WAVES) {
+      waveNum++;
+      addLog('onda limpa! próxima em 2s...','info');
+      setTimeout(() => {
+        if(gameRunning) spawnWave(waveNum);
+      }, 2000);
+    } else {
+      endGame(true);
+    }
+  }
+}
+
+function killEnemy(e) {
+  e.alive=false;
+  e.el.classList.add('dead');
+  setTimeout(()=>e.el.remove(),400);
+  P.kills++;
+  gainXp(e.xp);
+  killVal.textContent = P.kills;
+  addLog(`${e.tag} derrotado +${e.xp}xp`,'accent');
+  updateHud();
+}
+
+function updateHud() {
+  hpFill.style.width = Math.max(0,P.hp/P.maxHp*100)+'%';
+  hpVal.textContent = Math.max(0,P.hp);
+  xpFill.style.width = (P.xp/P.xpNext*100)+'%';
+}
+
+function loop(ts) {
+  const dt = ts - lastTime;
+  lastTime = ts;
+  update(Math.min(dt,50));
+  if(gameRunning) animId = requestAnimationFrame(loop);
+}
+
+function endGame(win) {
+  gameRunning = false;
+  cancelAnimationFrame(animId);
+  overlay.className = 'show '+(win?'win':'gameover');
+  overlayTitle.textContent = win ? 'VITÓRIA' : 'GAME OVER';
+  overlaySub.textContent = win
+    ? `ondas completadas · ${P.kills} inimigos · Lv.${P.level}`
+    : `chegou até a wave ${waveNum} · ${P.kills} kills · Lv.${P.level}`;
+}
+
+function restartGame() {
+  cancelAnimationFrame(animId);
+  for(const e of enemies){ e.el.remove(); }
+  for(const b of bullets){ b.el.remove(); }
+  enemies=[]; bullets=[]; keys={};
+  waveNum=0;
+  waveClear = false;
+  logLines.length=0; logEl.innerHTML='';
+  overlay.className='';
+  atkVal.textContent=20;
+  killVal.textContent=0;
+  levelTag.textContent='Lv.1';
+
+  initPlayer();
+  updateHud();
+  spawnWave(0);
+  gameRunning=true;
+  lastTime=performance.now();
+  animId=requestAnimationFrame(loop);
+}
+
+document.addEventListener('keydown', e=>{
+  const k=e.key.toLowerCase();
+  keys[k]=true;
+  if([' ','w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault();
+  if(k===' '||k==='j') playerShoot();
+  if(k==='shift') playerDash();
+});
+document.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
+
+// Inicialização automatica
+initPlayer();
+restartGame();
+</script>
+</body>
+</html>
