@@ -270,12 +270,52 @@ kbd{
   from { opacity: 0; transform: translate(-50%, -10px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
+/* RONALDO */
+.enemy.ronaldo-boss{
+  background:#1a0f2e;
+  color:#f5c842;
+  border-color:#a855f7;
+}
+.enemy.ronaldo-boss.aggro{border-color:#f5c842!important}
+.enemy.ronaldo-dashing{
+  border-color:#f5c842!important;
+  background:#2d1f00!important;
+}
+.ebar-fill.boss-bar-fill{background:#f5c842}
+.bullet.ronaldo-bullet{background:#f5c842;width:9px;height:9px}
+#boss-name.ronaldo-name{
+  color:#f5c842;
+  text-shadow:0 0 8px rgba(245,200,66,.5);
+}
+#boss-hp-fill.ronaldo-fill{
+  background:linear-gradient(90deg,#a855f7,#f5c842);
+}
+.dash-trail{
+  position:absolute;
+  width:34px;height:34px;
+  border-radius:8px;
+  background:rgba(245,200,66,.18);
+  border:1px solid rgba(245,200,66,.35);
+  pointer-events:none;
+  z-index:4;
+  animation:trail-fade .35s ease-out forwards;
+}
+.log-line.gold{color:#f5c842}
+@keyframes trail-fade{
+  0%{opacity:.8}
+  100%{opacity:0;transform:scale(.5)}
+}
 </style>
 </head>
 <body>
-
+<div id="menu" style="position:fixed;inset:0;background:#0f0f10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:100">
+  <h1 style="font-family:'Syne',sans-serif;font-size:48px;font-weight:800;color:#c8f53a;letter-spacing:-.03em">BLOCOS SHOT</h1>
+  <p style="font-size:11px;color:#666672;letter-spacing:.1em">SELECIONE O MODO</p>
+  <button onclick="startGame('normal')" style="width:260px;padding:12px;background:transparent;border:1px solid #c8f53a;color:#c8f53a;font-family:'DM Mono',monospace;font-size:14px;border-radius:5px;cursor:pointer">▶ NORMAL — 15 ondas</button>
+  <button onclick="startGame('bossrush')" style="width:260px;padding:12px;background:transparent;border:1px solid #f53a3a;color:#f53a3a;font-family:'DM Mono',monospace;font-size:14px;border-radius:5px;cursor:pointer">💀 BOSS RUSH — só bosses</button>
+</div>
 <div id="hud">
-  <h1>BLOCOS RPG</h1>
+  <h1>BLOCOS SHOT</h1>
   <div class="bar-wrap">
     <div class="bar-label">HP</div>
     <div class="bar"><div class="bar-fill" id="hp-fill" style="width:100%"></div></div>
@@ -312,6 +352,7 @@ kbd{
     <h2 id="overlay-title">GAME OVER</h2>
     <p id="overlay-sub">você foi derrotado</p>
     <button onclick="restartGame()">&#9654; jogar de novo</button>
+    <button onclick="voltarMenu()">&#9654; voltar ao menu</button>
   </div>
 </div>
 
@@ -333,6 +374,8 @@ const bossHud = document.getElementById('boss-hud');
 const bossHpFill = document.getElementById('boss-hp-fill');
 const bossName = document.getElementById('boss-name');
 let activeBoss = null;
+let gameMode = 'normal';
+let bossSpawning = false;
 
 // ── STATE ──
 let P = {};
@@ -342,9 +385,14 @@ let keys = {};
 let gameRunning = false;
 let animId;
 let lastTime = 0;
-let waveNum = 0;
+let waveNum = 14;
 let waveClear = false;
-const MAX_WAVES = 10;
+let MAX_WAVES = 15;
+
+function voltarMenu() {
+  overlay.className = '';
+  document.getElementById('menu').style.display = 'flex';
+}
 
 function initPlayer() {
   const r = arena.getBoundingClientRect();
@@ -367,7 +415,8 @@ const ETYPES = [
   { tag:'Gnomo',  ico:'▶', hp:25,  atk:15,  spd:2.0, xp:20, size:32 },
   { tag:'Gandalf',  ico:'✦', hp:55,  atk:40, spd:0.9, xp:30, size:36, shoots:true },
   { tag:'VORTEX', ico:'🌀', hp:300, atk:60, spd:0.8,   xp:200, size:64 },
-  { tag:'VOID',   ico:'🌌', hp:700, atk:100, spd:1,  xp:999, size:70 }
+  { tag:'VOID',   ico:'🌌', hp:700, atk:100, spd:1,  xp:999, size:70 },
+  { tag:'RONALDO',ico:'🗡️', hp:900, atk:80,  spd:0,   xp:1500, size:68 }
 ];
 
 function spawnEnemy(type) {
@@ -383,13 +432,14 @@ function spawnEnemy(type) {
   else{x=-48;y=Math.random()*r.height}
 
   // Se for Boss, joga no centro exato da arena temporariamente
-  if(t.tag === 'VORTEX' || t.tag === 'VOID') {
+  if(t.tag === 'VORTEX' || t.tag === 'VOID' || t.tag === 'RONALDO') {
     x = r.width / 2 - t.size / 2;
     y = r.height / 2 - t.size / 2;
   }
 
   const el = document.createElement('div');
   el.className = 'entity enemy';
+  if(t.tag === 'RONALDO') el.classList.add('ronaldo-boss');
   el.style.width = t.size+'px';
   el.style.height = t.size+'px';
 
@@ -397,9 +447,10 @@ function spawnEnemy(type) {
   ebar.className='ebar-wrap';
   const ebarFill = document.createElement('div');
   ebarFill.className='ebar-fill';
+  if(t.tag === 'RONALDO') ebarFill.classList.add('boss-bar-fill');
   ebar.appendChild(ebarFill);
 
-  el.innerHTML = `<div class="ico">${t.ico}</div><div class="etag">${t.tag}</div>`;
+  el.innerHTML = `<div class="ico" style="font-size:${t.tag==='RONALDO'?'28':'18'}px">${t.ico}</div><div class="etag">${t.tag}</div>`;
   el.appendChild(ebar);
   arena.appendChild(el);
   
@@ -418,6 +469,14 @@ function spawnEnemy(type) {
     teleportCd: 180,
     aggro: false, alive: true,
     hitCd: 0,
+    dashState: 'idle',
+    dashCooldown: 30,
+    dashVx: 0,
+    dashVy: 0,
+    dashDuration: 0,
+    dashMaxDuration: 0,
+    trailCd: 0,
+    spiralFired: false,
   };
   
   enemies.push(e);
@@ -428,6 +487,27 @@ function spawnWave(num) {
   waveTag.textContent = 'WAVE ' + num;
   waveClear = false;
 
+  if(gameMode === 'bossrush') {
+  // waves 1,2,3 = VORTEX, VOID, RONALDO
+  const bossMap = {1:4, 2:5, 3:6};
+  const bossIdx = bossMap[num];
+  if(!bossIdx) { endGame(true); return; }
+  addLog(`— boss ${num}/3 —`, 'danger');
+  bossSpawning = true;
+  setTimeout(() => {
+    if (!gameRunning) return;
+    bossSpawning = false;
+    activeBoss = spawnEnemy(bossIdx);
+    const names = {4:'VORTEX', 5:'VOID', 6:'RONALDO'};
+    bossName.textContent = names[bossIdx];
+    bossName.className = bossIdx===6 ? 'ronaldo-name' : '';
+    bossHpFill.className = bossIdx===6 ? 'ronaldo-fill' : '';
+    bossHpFill.style.width = '100%';
+    bossHud.style.display = 'flex';
+  }, 3000);
+  return;
+  }
+
   if (num === 5) {
     addLog(`⚠️ BOSS VORTEX SE APROXIMA! ⚠️`, 'danger');
     activeBoss = spawnEnemy(4);
@@ -435,7 +515,6 @@ function spawnWave(num) {
     bossName.textContent = activeBoss.tag;
     bossHpFill.style.width = '100%';
     bossHud.style.display = 'flex';
-
     return;
   }
   
@@ -446,9 +525,20 @@ function spawnWave(num) {
     bossName.textContent = activeBoss.tag;
     bossHpFill.style.width = '100%';
     bossHud.style.display = 'flex';
-
     return;
   }
+  
+  if (num === 15) {
+  addLog('RONALDO ENTROU EM CAMPO! IMPOSSÍVEL DE PARAR!', 'gold');
+  activeBoss = spawnEnemy(6);
+  bossName.textContent = '⚽ RONALDO ⚽';
+  bossName.className = 'ronaldo-name';
+  bossHpFill.className = 'ronaldo-fill';
+  bossHpFill.style.width = '100%';
+  bossHud.style.display = 'flex';
+  return;
+  }
+
 
   // Ondas normais
   const count = 3 + num * 2;
@@ -488,10 +578,20 @@ function floater(x, y, text, color='var(--accent)') {
   setTimeout(()=>f.remove(), 900);
 }
 
+// ── Trail de Dash RONALDO ──
+function spawnTrail(x, y) {
+  const t = document.createElement('div');
+  t.className = 'dash-trail';
+  t.style.left = x+'px';
+  t.style.top  = y+'px';
+  arena.appendChild(t);
+  setTimeout(()=>t.remove(), 350);
+}
+
 // ── BULLETS ──
-function shootBullet(x, y, dx, dy, fromEnemy=false, dmg=20) {
+function shootBullet(x, y, dx, dy, fromEnemy=false, dmg=20, isRonaldo=false) {
   const b = document.createElement('div');
-  b.className = 'bullet'+(fromEnemy?' enemy-bullet':'');
+  b.className = 'bullet'+(fromEnemy?' enemy-bullet':'')+(isRonaldo? ' ronaldo-bullet':'');
   b.style.left = x+'px';
   b.style.top  = y+'px';
   arena.appendChild(b);
@@ -556,6 +656,95 @@ function clampPos(obj, size) {
   obj.y = Math.max(0, Math.min(r.height-size, obj.y));
 }
 
+// ── RONALDO AI ──
+function updateRonaldo(e, dt) {
+  const r = arena.getBoundingClientRect();
+  const dtf = dt * 0.06;
+  e.dashCooldown -= dtf;
+  e.trailCd -= dtf;
+
+  if (e.dashState === 'idle') {
+    if (e.dashCooldown <= 0) {
+      const tdx = (P.x + 19) - (e.x + e.size/2);
+      const tdy = (P.y + 19) - (e.y + e.size/2);
+      const tlen = Math.hypot(tdx, tdy) || 1;
+      const speed = 30;
+      e.dashVx = (tdx/tlen) * speed;
+      e.dashVy = (tdy/tlen) * speed;
+      e.dashDuration = 0;
+      e.dashMaxDuration = 80;
+      e.dashState = 'dashing';
+      e.spiralFired = false;
+      e.el.classList.add('ronaldo-dashing');
+      floater(e.x + e.size/2, e.y, 'DASH!', '#f5c842');
+    } else {
+      const sdx = (P.x + 19) - (e.x + e.size/2);
+      const sdy = (P.y + 19) - (e.y + e.size/2);
+      const slen = Math.hypot(sdx, sdy) || 1;
+      e.x += (sdx/slen) * 0.4 * dtf;
+      e.y += (sdy/slen) * 0.4 * dtf;
+    }
+  }
+
+  if (e.dashState === 'dashing') {
+    const progress = e.dashDuration / e.dashMaxDuration;
+    const easeOut = 1 - progress;
+    e.x += e.dashVx * easeOut * dtf;
+    e.y += e.dashVy * easeOut * dtf;
+    e.dashDuration += dtf;
+
+    if(e.trailCd <= 0) {
+      spawnTrail(e.x + (e.size-34)/2, e.y + (e.size-34)/2);
+      e.trailCd = 3;
+    }
+
+    const hitWall = e.x <= 2 || e.x >= r.width - e.size - 2
+                 || e.y <= 2 || e.y >= r.height - e.size - 2;
+    const timeUp = e.dashDuration >= e.dashMaxDuration;
+
+  if(!e.spiralFired && e.dashDuration >= 3) {
+    // Disparo ANTES do dash (no início)
+    ronaldoSpiralBlast(e);
+    floater(e.x + e.size/2, e.y, 'SPIRAL!', '#f5c842');
+    addLog('Ronaldo — PRE-DASH SPIRAL!', 'gold');
+    e.spiralFired = true;
+  }
+
+  if((hitWall || timeUp) && e.spiralFired) {
+    e.x = Math.max(2, Math.min(r.width - e.size - 2, e.x));
+    e.y = Math.max(2, Math.min(r.height - e.size - 2, e.y));
+    e.dashState = 'recovering';
+    e.dashCooldown = 90;
+    e.el.classList.remove('ronaldo-dashing');
+    // Disparo DEPOIS (ao bater na parede)
+    ronaldoSpiralBlast(e);
+    floater(e.x + e.size/2, e.y, 'SPIRAL!', '#f5c842');
+    addLog('Ronaldo — WALL SPIRAL!', 'gold');
+  }
+  }
+
+  if (e.dashState === 'recovering') {
+    if(e.dashCooldown <= 0) {
+      e.dashState = 'idle';
+      e.dashCooldown = 55 + Math.random()*30;
+    }
+  }
+}
+
+// ── RONALDO SPECIAL ATTACK ──
+function ronaldoSpiralBlast(e) {
+  const cx = e.x + e.size/2 - 4;
+  const cy = e.y + e.size/2 - 4;
+  const total = 12;
+  for(let s = 0; s < 2; s++) {
+    const phaseOffset = s * (Math.PI / total);
+    for(let i = 0; i < total; i++) {
+      const angle = phaseOffset + (i * Math.PI * 2 / total);
+      shootBullet(cx, cy, Math.cos(angle)*4.5, Math.sin(angle)*4.5, true, e.atk, true);
+    }
+  }
+}
+
 // ── UPDATE ──
 async function update(dt) {
   if(!gameRunning) return;
@@ -588,8 +777,12 @@ async function update(dt) {
 
     
       // Movimento básico em direção ao jogador
+      if(e.tag === 'RONALDO') {
+      updateRonaldo(e, dt);
+      } else {
       e.x += edx/elen * e.spd * dt*0.06;
       e.y += edy/elen * e.spd * dt*0.06;
+      }
     
       if (e.tag === 'VORTEX') {
         // Efeito Gravidade / Buraco negro ativo
@@ -614,6 +807,7 @@ async function update(dt) {
 
     if(aggroDist<280 && !e.aggro){ e.aggro=true; e.el.classList.add('aggro'); }
 
+  if(e.tag !== 'RONALDO') {
     // Sistema de tiros Bullet Hell
     e.shootCd -= dt*0.06;
     if(e.shootCd <= 0) {
@@ -653,6 +847,7 @@ async function update(dt) {
         }
       }
     }
+  }
 
     // Contato Físico
     if(P.invincible<=0 && aggroDist < (e.size/2 + 15)) {
@@ -719,7 +914,7 @@ async function update(dt) {
 
   // Passagem de Ondas
   const alive = enemies.filter(e=>e.alive);
-  if(alive.length===0 && gameRunning && !waveClear) {
+  if(alive.length===0 && gameRunning && !waveClear && !bossSpawning) {
     waveClear = true;
     if(waveNum < MAX_WAVES) {
       waveNum++;
@@ -774,12 +969,22 @@ function endGame(win) {
     : `chegou até a wave ${waveNum} · ${P.kills} kills · Lv.${P.level}`;
 }
 
+function startGame(mode) {
+  gameMode = mode;
+  document.getElementById('menu').style.display = 'none';
+  restartGame();
+}
+
 function restartGame() {
   cancelAnimationFrame(animId);
   for(const e of enemies){ e.el.remove(); }
   for(const b of bullets){ b.el.remove(); }
   enemies=[]; bullets=[]; keys={};
-  waveNum=0;
+  if(gameMode === 'bossrush') {
+  waveNum = 1;
+  } else {
+  waveNum = 0;
+  }
   waveClear = false;
   logLines.length=0; logEl.innerHTML='';
   overlay.className='';
@@ -792,7 +997,13 @@ function restartGame() {
 
   initPlayer();
   updateHud();
+  window.MAX_WAVES = gameMode === 'bossrush' ? 3 : 15;
+  if(gameMode === 'bossrush') {
+  addLog('BOSS RUSH INICIADO! Enfrente os 3 bosses seguidos!', 'danger');
+  spawnWave(1);
+  } else {
   spawnWave(0);
+  }
   gameRunning=true;
   lastTime=performance.now();
   animId=requestAnimationFrame(loop);
@@ -807,9 +1018,7 @@ document.addEventListener('keydown', e=>{
 });
 document.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
 
-// Inicialização automatica
-initPlayer();
-restartGame();
+
 </script>
 </body>
 </html>
