@@ -226,6 +226,50 @@ kbd{
   color:var(--text-muted);
   z-index:20;
 }
+
+/* ── BOSS BAR ── */
+#boss-hud {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  max-width: 600px;
+  display: none; 
+  flex-direction: column;
+  gap: 5px;
+  z-index: 25;
+  animation: fadeIn 0.5s ease-out;
+}
+#boss-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--red);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(245, 58, 58, 0.4);
+}
+.boss-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(46, 46, 56, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+#boss-hp-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--red-dim), var(--red));
+  border-radius: 2px;
+  transition: width 0.1s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
 </style>
 </head>
 <body>
@@ -252,6 +296,12 @@ kbd{
 </div>
 
 <div id="arena">
+  <div id="boss-hud">
+    <div id="boss-name">NOME DO BOSS</div>
+    <div class="boss-bar">
+      <div id="boss-hp-fill"></div>
+    </div>
+  </div>
   <div id="player" class="entity">
     <div class="ico">&#9632;</div>
     <div class="etag">YOU</div>
@@ -279,6 +329,10 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlaySub = document.getElementById('overlay-sub');
 const waveTag = document.getElementById('wave-tag');
 const logEl = document.getElementById('log');
+const bossHud = document.getElementById('boss-hud');
+const bossHpFill = document.getElementById('boss-hp-fill');
+const bossName = document.getElementById('boss-name');
+let activeBoss = null;
 
 // ── STATE ──
 let P = {};
@@ -376,13 +430,23 @@ function spawnWave(num) {
 
   if (num === 5) {
     addLog(`⚠️ BOSS VORTEX SE APROXIMA! ⚠️`, 'danger');
-    spawnEnemy(4);
+    activeBoss = spawnEnemy(4);
+
+    bossName.textContent = activeBoss.tag;
+    bossHpFill.style.width = '100%';
+    bossHud.style.display = 'flex';
+
     return;
   }
   
   if (num === 10) {
     addLog(`🌌 O VAZIO ABSORVE A REALIDADE: VOID! 🌌`, 'danger');
-    spawnEnemy(5);
+    activeBoss = spawnEnemy(5);
+
+    bossName.textContent = activeBoss.tag;
+    bossHpFill.style.width = '100%';
+    bossHud.style.display = 'flex';
+
     return;
   }
 
@@ -627,6 +691,10 @@ async function update(dt) {
           floater(e.x, e.y-8, '-'+dmg,'var(--accent)');
           b.alive=false; b.el.remove();
           e.ebarFill.style.width = Math.max(0,e.hp/e.maxHp*100)+'%';
+          // Atualização da barra de vida do boss, se aplicável
+          if (activeBoss && e === activeBoss) {
+            bossHpFill.style.width = Math.max(0, e.hp / e.maxHp * 100) + '%';
+          }
           if(e.hp<=0) killEnemy(e);
           break;
         }
@@ -669,6 +737,13 @@ function killEnemy(e) {
   e.alive=false;
   e.el.classList.add('dead');
   setTimeout(()=>e.el.remove(),400);
+
+  // ── NOVO: Oculta o HUD do Boss se ele foi derrotado
+  if (activeBoss && e === activeBoss) {
+    bossHud.style.display = 'none';
+    activeBoss = null;
+  }
+
   P.kills++;
   gainXp(e.xp);
   killVal.textContent = P.kills;
@@ -711,6 +786,9 @@ function restartGame() {
   atkVal.textContent=20;
   killVal.textContent=0;
   levelTag.textContent='Lv.1';
+
+  bossHud.style.display = 'none';
+  activeBoss = null;
 
   initPlayer();
   updateHud();
