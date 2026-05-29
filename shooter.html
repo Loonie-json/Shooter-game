@@ -485,7 +485,7 @@ function gainXp(amount) {
   }
 }
 
-// ── CLAMP ──
+
 function clampPos(obj, size) {
   const r = arena.getBoundingClientRect();
   obj.x = Math.max(0, Math.min(r.width-size,  obj.x));
@@ -550,7 +550,7 @@ async function update(dt) {
 
     if(aggroDist<280 && !e.aggro){ e.aggro=true; e.el.classList.add('aggro'); }
 
-    // Sistema de tiros Bullet Hell corrigido
+    // Sistema de tiros Bullet Hell
     e.shootCd -= dt*0.06;
     if(e.shootCd <= 0) {
       if(e.shoots) {
@@ -606,7 +606,7 @@ async function update(dt) {
     }
   }
 
-  // Balas mecânica de movimento
+  // Balas, mecânica de movimento
   for(const b of bullets) {
     if(!b.alive) continue;
     b.x += b.dx * dt*0.06;
