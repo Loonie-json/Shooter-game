@@ -323,18 +323,18 @@ kbd{
   display: none;
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  height: 160px;
+  height: 22vh;
   pointer-events: none;
   z-index: 100;
 }
 #joystick-zone {
   position: absolute;
-  left: 20px; bottom: 20px;
-  width: 120px; height: 120px;
+  left: 4vw; bottom: 3vh;
+  width: 18vw; height: 18vw;
   pointer-events: all;
 }
 #joystick-base {
-  width: 120px; height: 120px;
+  width: 100%; height: 100%;
   border-radius: 50%;
   background: rgba(255,255,255,0.12);
   border: 2px solid rgba(255,255,255,0.3);
@@ -342,27 +342,51 @@ kbd{
   touch-action: none;
 }
 #joystick-stick {
-  width: 48px; height: 48px;
+  width: 44%; height: 44%;
   border-radius: 50%;
   background: rgba(255,255,255,0.5);
   position: absolute;
-  top: 36px; left: 36px;
+  top: 28%; left: 28%;
   transition: none;
 }
 #btn-dash {
   position: absolute;
-  right: 24px; bottom: 30px;
-  width: 80px; height: 80px;
+  right: 4vw; bottom: 3vh;
+  width: 15vw; height: 15vw;
   border-radius: 50%;
   background: rgba(255, 180, 0, 0.25);
   border: 2px solid rgba(255, 180, 0, 0.7);
   color: #ffd700;
-  font-size: 14px;
+  font-size: 3vw;
   font-weight: bold;
   pointer-events: all;
   touch-action: none;
 }
-@media (max-width: 600px) { #kbd-hint { display: none; } }
+@media (max-width: 600px) {
+  #kbd-hint { display: none; }
+  #arena { padding-bottom: 22vh; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  #hud {
+    padding: 4px 12px;
+    gap: 12px;
+  }
+  #hud h1, #kbd-hint { display: none; }
+  .bar { width: 80px; }
+  #mobile-controls { height: 100vh; width: 100vw; }
+  #joystick-zone {
+    left: 2vw; bottom: 50%;
+    transform: translateY(50%);
+    width: 15vh; height: 15vh;
+  }
+  #btn-dash {
+    right: 2vw; bottom: 50%;
+    transform: translateY(50%);
+    width: 12vh; height: 12vh;
+    font-size: 2vh;
+  }
+  #arena { padding-bottom: 0; padding-right: 18vh; padding-left: 18vh; }
+}
 </style>
 </head>
 <body>
@@ -396,6 +420,11 @@ kbd{
   <div class="stat">ATK <span id="atk-val">20</span></div>
   <div class="stat">kills <span id="kill-val">0</span></div>
   <div id="level-tag">Lv.1</div>
+  <button id="btn-fullscreen" onclick="toggleFullscreen()" style="
+  margin-left:8px;background:transparent;border:1px solid var(--border);
+  color:var(--text-muted);padding:4px 10px;font-family:'DM Mono',monospace;
+  font-size:11px;border-radius:4px;cursor:pointer;flex-shrink:0;
+">⛶</button>
   <div id="kbd-hint">
     <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> mover
     &nbsp;<kbd>Espaço</kbd> atacar
@@ -876,7 +905,7 @@ function ronaldoSpiralBlast(e) {
   const cy = e.y + e.size / 2 - 4;
   for (let s = 0; s < 2; s++) {
     const offset = s * (Math.PI / 12);
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 12; i++) {
       const a = offset + i * Math.PI * 2 / 12;
       spawnBullet(cx, cy, Math.cos(a) * 4.5, Math.sin(a) * 4.5, true, e.atk, true);
     }
@@ -1116,7 +1145,15 @@ function voltarMenu() {
   document.getElementById('menu').style.display = 'flex';
 }
 
-// INPUT
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+    screen.orientation?.lock('landscape').catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+}
+
 // INPUT — teclado
 document.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
