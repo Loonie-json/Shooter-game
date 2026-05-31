@@ -17,9 +17,9 @@
 * **👾 Bestiário Variado:** * `▲ Makako` e `▶ Gnomo` (Velozes/Perseguidores)
     * `◆ Bruto` (Tanque com muita vida)
     * `✦ Gandalf` (Atirador à distância)
-* **💀 Bossfights Épicas:** * **Wave 5:** `🌀 VORTEX` (Gera um campo gravitacional que puxa o jogador e dispara em espiral).
-    * **Wave 10:** `🌌 VOID` (Teleporta aleatoriamente e lança padrões massivos de *Bullet Hell*, 50/50 se não morrer por azar talvez passe).
-    * **Wave 15:** `RONALDO`(Avanços mortais e uma Salva brutal de misseis, esquive ate o fim).
+* **💀 Bossfights Épicas:** * **Wave 5:** `🌀 VORTEX` (Gera um campo gravitacional que puxa o jogador e dispara em espiral)
+    * **Wave 10:** `🌌 VOID` (Teleporta aleatoriamente e lança padrões massivos de *Bullet Hell*, 50/50 se não morrer por azar talvez passe)
+    * **Wave 15:** `RONALDO`(Avanços mortais e uma Salva brutal de misseis, esquive ate o fim)
 
 ---
 
