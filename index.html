@@ -413,6 +413,8 @@ const bossHpFill  = document.getElementById('boss-hp-fill');
 const bossNameEl  = document.getElementById('boss-name');
 const musicaNormal  = document.getElementById('Normal-Music');
 const musicaBoss     = document.getElementById('Boss-Music');
+const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+
 
 // GAME STATE
 let P, enemies = [], bullets = [], keys = {};
@@ -979,7 +981,9 @@ function addLog(msg, cls = '') {
   if (logLines.length > 4) logLines.shift();
   logEl.innerHTML = logLines.map(l => `<div class="log-line ${l.cls}">${l.msg}</div>`).join('');
 }
-
+if(isMobile) {
+  addLog('Controles: toque para mover, toque duplo para dash, atire automaticamente', 'info');
+}
 function floater(x, y, text, color = 'var(--accent)') {
   const f = document.createElement('div');
   f.className = 'floater';
