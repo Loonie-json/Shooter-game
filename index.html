@@ -317,6 +317,51 @@ kbd{
   background: rgba(245, 200, 66, 0.95);
   box-shadow: 0 0 22px 8px rgba(245, 200, 66, 0.5);
 }
+
+/* ── MOBILE CONTROLS ── */
+#mobile-controls {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 160px;
+  pointer-events: none;
+  z-index: 100;
+}
+#joystick-zone {
+  position: absolute;
+  left: 20px; bottom: 20px;
+  width: 120px; height: 120px;
+  pointer-events: all;
+}
+#joystick-base {
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  border: 2px solid rgba(255,255,255,0.3);
+  position: relative;
+  touch-action: none;
+}
+#joystick-stick {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  position: absolute;
+  top: 36px; left: 36px;
+  transition: none;
+}
+#btn-dash {
+  position: absolute;
+  right: 24px; bottom: 30px;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 180, 0, 0.25);
+  border: 2px solid rgba(255, 180, 0, 0.7);
+  color: #ffd700;
+  font-size: 14px;
+  font-weight: bold;
+  pointer-events: all;
+  touch-action: none;
+}
 </style>
 </head>
 <body>
@@ -375,6 +420,14 @@ kbd{
     <button onclick="restartGame()">&#9654; jogar de novo</button>
     <button onclick="voltarMenu()">&#9654; voltar ao menu</button>
   </div>
+</div>
+<div id="mobile-controls">
+  <div id="joystick-zone">
+    <div id="joystick-base">
+      <div id="joystick-stick"></div>
+    </div>
+  </div>
+  <button id="btn-dash" ontouchstart="mobileDash(event)">DASH</button>
 </div>
 
 <script>
@@ -981,9 +1034,7 @@ function addLog(msg, cls = '') {
   if (logLines.length > 4) logLines.shift();
   logEl.innerHTML = logLines.map(l => `<div class="log-line ${l.cls}">${l.msg}</div>`).join('');
 }
-if(isMobile) {
-  addLog('Controles: toque para mover, toque duplo para dash, atire automaticamente', 'info');
-}
+
 function floater(x, y, text, color = 'var(--accent)') {
   const f = document.createElement('div');
   f.className = 'floater';
@@ -1065,6 +1116,7 @@ function voltarMenu() {
 }
 
 // INPUT
+// INPUT — teclado
 document.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   keys[k] = true;
@@ -1074,6 +1126,70 @@ document.addEventListener('keydown', e => {
   if (k === 'shift') playerDash();
 });
 document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+// INPUT — mobile
+const joystickBase  = document.getElementById('joystick-base');
+const joystickStick = document.getElementById('joystick-stick');
+let joyActive = false, joyId = null;
+const JOYRADIUS = 36;
+
+function joystickPos(touch) {
+  const r   = joystickBase.getBoundingClientRect();
+  const cx  = r.left + r.width  / 2;
+  const cy  = r.top  + r.height / 2;
+  let dx = touch.clientX - cx;
+  let dy = touch.clientY - cy;
+  const dist = Math.hypot(dx, dy);
+  if (dist > JOYRADIUS) { dx = dx / dist * JOYRADIUS; dy = dy / dist * JOYRADIUS; }
+  joystickStick.style.transform = `translate(${dx}px, ${dy}px)`;
+  // Mapeia pra keys virtuais
+  keys['a'] = dx < -10; keys['d'] = dx > 10;
+  keys['w'] = dy < -10; keys['s'] = dy > 10;
+}
+
+function joystickReset() {
+  joyActive = false; joyId = null;
+  joystickStick.style.transform = '';
+  keys['a'] = keys['d'] = keys['w'] = keys['s'] = false;
+}
+
+joystickBase.addEventListener('touchstart', e => {
+  e.preventDefault();
+  joyActive = true;
+  joyId = e.changedTouches[0].identifier;
+  joystickPos(e.changedTouches[0]);
+}, { passive: false });
+
+joystickBase.addEventListener('touchmove', e => {
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    if (t.identifier === joyId) joystickPos(t);
+  }
+}, { passive: false });
+
+joystickBase.addEventListener('touchend',    () => joystickReset());
+joystickBase.addEventListener('touchcancel', () => joystickReset());
+
+function mobileDash(e) { e.preventDefault(); playerDash(); }
+
+// Auto-shoot no mobile (dispara a cada ~350ms)
+let mobileShootInterval = null;
+function startMobileShoot() {
+  if (mobileShootInterval) return;
+  mobileShootInterval = setInterval(() => {
+    if (gameRunning) playerShoot();
+  }, 350);
+}
+function stopMobileShoot() {
+  clearInterval(mobileShootInterval);
+  mobileShootInterval = null;
+}
+
+// Ativa controles mobile se for dispositivo touch
+if (isMobile) {
+  document.getElementById('mobile-controls').style.display = 'block';
+  startMobileShoot();
+}
 </script>
 </body>
 </html>
