@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BLOCOS SHOT</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
@@ -602,6 +602,7 @@ function spawnEnemy(typeIdx) {
   const t     = ETYPES[typeIdx];
   const isBoss = ['VORTEX', 'VOID', 'RONALDO'].includes(t.tag);
   const scale  = 1 + (waveNum - 1) * 0.3;
+  const sizeScale = getScale();
 
   let x, y;
   if (isBoss) {
@@ -617,7 +618,8 @@ function spawnEnemy(typeIdx) {
 
   const el = document.createElement('div');
   el.className = 'entity enemy' + (t.tag === 'RONALDO' ? ' ronaldo-boss' : '');
-  el.style.cssText = `width:${t.size}px;height:${t.size}px`;
+  const scaledSize = Math.round(t.size * sizeScale);
+  el.style.cssText = `width:${scaledSize}px;height:${scaledSize}px`;
   el.innerHTML = `<div class="ico" style="font-size:${t.tag === 'RONALDO' ? 28 : 18}px">${t.ico}</div><div class="etag">${t.tag}</div>`;
 
   const ebarFill = document.createElement('div');
@@ -629,7 +631,7 @@ function spawnEnemy(typeIdx) {
   arena.appendChild(el);
 
   const e = {
-    el, ebarFill, x, y, tag: t.tag, size: t.size,
+    el, ebarFill, x, y, tag: t.tag, size: scaledSize,
     hp: Math.floor(t.hp * scale), maxHp: Math.floor(t.hp * scale),
     atk: Math.floor(t.atk * scale), spd: t.spd, xp: t.xp,
     shoots: t.shoots || false,
@@ -1143,6 +1145,11 @@ function restartGame() {
 function voltarMenu() {
   overlay.className = '';
   document.getElementById('menu').style.display = 'flex';
+}
+
+function getScale() {
+  const { width, height } = arena.getBoundingClientRect();
+  return Math.min(width, height) / 600;
 }
 
 function toggleFullscreen() {
