@@ -362,6 +362,7 @@ kbd{
   pointer-events: all;
   touch-action: none;
 }
+@media (max-width: 600px) { #kbd-hint { display: none; } }
 </style>
 </head>
 <body>
@@ -466,7 +467,7 @@ const bossHpFill  = document.getElementById('boss-hp-fill');
 const bossNameEl  = document.getElementById('boss-name');
 const musicaNormal  = document.getElementById('Normal-Music');
 const musicaBoss     = document.getElementById('Boss-Music');
-const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
 
 // GAME STATE
@@ -875,7 +876,7 @@ function ronaldoSpiralBlast(e) {
   const cy = e.y + e.size / 2 - 4;
   for (let s = 0; s < 2; s++) {
     const offset = s * (Math.PI / 12);
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 8; i++) {
       const a = offset + i * Math.PI * 2 / 12;
       spawnBullet(cx, cy, Math.cos(a) * 4.5, Math.sin(a) * 4.5, true, e.atk, true);
     }
@@ -1188,6 +1189,8 @@ function stopMobileShoot() {
 // Ativa controles mobile se for dispositivo touch
 if (isMobile) {
   document.getElementById('mobile-controls').style.display = 'block';
+  arena.style.touchAction = 'none';
+  arena.style.paddingBottom = '170px';
   startMobileShoot();
 }
 </script>
