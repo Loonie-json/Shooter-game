@@ -285,9 +285,47 @@ kbd{
   0%{opacity:.8}
   100%{opacity:0;transform:scale(.5)}
 }
+/* Laser de aviso */
+.laser-warn {
+  position: absolute;
+  height: 3px;
+  margin-top: -1.5px;
+  background: rgba(255, 80, 60, 0.3);
+  border-top: 1px dashed rgba(255, 80, 60, 0.7);
+  border-bottom: 1px dashed rgba(255, 80, 60, 0.7);
+  pointer-events: none;
+  z-index: 1;
+  transition: height 0.08s, background 0.08s;
+}
+/* Laser ativo */
+.laser-active {
+  position: absolute;
+  height: 14px;
+  margin-top: -7px;
+  background: rgba(255, 40, 30, 0.92);
+  box-shadow: 0 0 18px 6px rgba(255, 50, 30, 0.55);
+  pointer-events: none;
+  z-index: 1;
+}
+/* Variante Ronaldo — dourado */
+.laser-warn.laser-ronaldo {
+  background: rgba(245, 200, 66, 0.25);
+  border-top: 1px dashed rgba(245, 200, 66, 0.75);
+  border-bottom: 1px dashed rgba(245, 200, 66, 0.75);
+}
+.laser-active.laser-ronaldo {
+  background: rgba(245, 200, 66, 0.95);
+  box-shadow: 0 0 22px 8px rgba(245, 200, 66, 0.5);
+}
 </style>
 </head>
 <body>
+<audio id="Normal-Music" loop style="display: none;">
+  <source src="https://dn711105.ca.archive.org/0/items/jamendo-461421/01-1899051-niyolshin-Chillout%20Cafe%20Lo-fi%20_Lo%20Fi%2C%20Hip%20Hop%2C%20Chill%20Out_.mp3" type="audio/mpeg">
+</audio>
+<audio id="Boss-Music" loop style="display: none;">
+  <source src="https://dn710606.ca.archive.org/0/items/mega-man-iii-mega-man-3-boss-battle-capcom-1992-gb/%C2%ABMega%20Man%20III%C2%BB%20-%20Mega%20Man%203%20Boss%20Battle%20%28Capcom%2C1992%2CGB%29%20.mp3" type="audio/mpeg">
+</audio>
 
 <!-- MENU -->
 <div id="menu" style="position:fixed;inset:0;background:#0f0f10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:100">
@@ -345,10 +383,10 @@ const ETYPES = [
   { tag:'Makako', ico:'▲',  hp:40,   atk:10,  spd:1.1, xp:15,   size:38 },
   { tag:'Bruto',  ico:'◆',  hp:100,  atk:25,  spd:0.7, xp:35,   size:42 },
   { tag:'Gnomo',  ico:'▶',  hp:25,   atk:15,  spd:2.0, xp:20,   size:32 },
-  { tag:'Gandalf',ico:'✦',  hp:55,   atk:40,  spd:0.9, xp:30,   size:36, shoots:true },
-  { tag:'VORTEX', ico:'🌀', hp:300,  atk:60,  spd:0.8, xp:200,  size:64 },
-  { tag:'VOID',   ico:'🌌', hp:700,  atk:70, spd:1,   xp:999,  size:70 },
-  { tag:'RONALDO',ico:'🗡️', hp:900,  atk:80,  spd:0,   xp:1500, size:68 },
+  { tag:'Gandalf',ico:'✦',  hp:55,   atk:20,  spd:0.9, xp:30,   size:36, shoots:true },
+  { tag:'VORTEX', ico:'🌀', hp:600,  atk:10,  spd:0.8, xp:200,  size:64 },
+  { tag:'VOID',   ico:'🌌', hp:800,  atk:50, spd:1.5,   xp:999,  size:70 },
+  { tag:'RONALDO',ico:'🗡️', hp:1500,  atk:60,  spd:1,   xp:1500, size:68 },
 ];
 
 const BOSS_WAVES   = { 5: 4, 10: 5, 15: 6 };
@@ -373,6 +411,8 @@ const logEl       = document.getElementById('log');
 const bossHud     = document.getElementById('boss-hud');
 const bossHpFill  = document.getElementById('boss-hp-fill');
 const bossNameEl  = document.getElementById('boss-name');
+const musicaNormal  = document.getElementById('Normal-Music');
+const musicaBoss     = document.getElementById('Boss-Music');
 
 // GAME STATE
 let P, enemies = [], bullets = [], keys = {};
@@ -380,6 +420,21 @@ let gameRunning = false, animId, lastTime = 0;
 let waveNum = 0, waveClear = false, bossSpawning = false;
 let activeBoss = null, gameMode = 'normal';
 const logLines = [];
+let musicaAtual = null;
+
+function alternarMusica(novaMusica) {
+  if (musicaAtual === novaMusica) return;
+
+  if (musicaAtual) {
+    musicaAtual.pause();
+    musicaAtual.currentTime = 0; 
+    }
+
+  musicaAtual = novaMusica;
+  musicaAtual.play().catch(e => {
+  console.log("Aguardando clique do usuário para iniciar o som.");
+  });
+  }
 
 // Jogador
 function initPlayer() {
@@ -446,8 +501,8 @@ function gainXp(amount) {
     P.level++;
     P.xpNext  = Math.floor(P.xpNext * 1.5);
     P.atk    += 8;
-    P.maxHp  += 20;
-    P.hp      = Math.min(P.hp + 30, P.maxHp);
+    P.maxHp  += 30;
+    P.hp      = Math.min(P.hp + 40, P.maxHp);
     P.speed  += 0.2;
     levelTag.textContent = 'Lv.' + P.level;
     atkVal.textContent   = P.atk;
@@ -511,6 +566,7 @@ function killEnemy(e) {
   if (activeBoss && e === activeBoss) {
     bossHud.style.display = 'none';
     activeBoss = null;
+    alternarMusica(musicaNormal);
   }
   P.kills++;
   gainXp(e.xp);
@@ -562,7 +618,7 @@ function updateEnemies(dt) {
 
     // Melee contact
     if (P.invincible <= 0 && dist < e.size / 2 + 15 && e.hitCd <= 0) {
-      P.hp -= e.atk;
+      P.hp -= Math.floor(e.atk);
       P.invincible = 30; e.hitCd = 40;
       floater(P.x, P.y - 10, '-' + e.atk, 'var(--red)');
       playerEl.classList.add('hit');
@@ -573,6 +629,92 @@ function updateEnemies(dt) {
   }
 }
 
+// ── Padrões de tiro inimigo ──────────────────────────────────────────────────
+function BalaUnica(cx, cy, dmg, speed = 4.5, isRonaldo = false) {
+  const dx = P.x - cx, dy = P.y - cy;
+  const len = Math.hypot(dx, dy) || 1;
+  spawnBullet(cx, cy, dx / len * speed, dy / len * speed, true, dmg, isRonaldo);
+}
+
+function AnelDeBala(cx, cy, dmg, count = 12, speed = 6.2, isRonaldo = false) {
+  for (let i = 0; i < count; i++) {
+    const a = i * Math.PI * 2 / count;
+    spawnBullet(cx, cy, Math.cos(a) * speed, Math.sin(a) * speed, true, dmg, isRonaldo);
+  }
+}
+
+function BalaSpiral(cx, cy, angleOffset, dmg, arms = 5, speed = 4.8, isRonaldo = false) {
+  for (let i = 0; i < arms; i++) {
+    const a = angleOffset + i * Math.PI * 2 / arms;
+    spawnBullet(cx, cy, Math.cos(a) * speed, Math.sin(a) * speed, true, dmg, isRonaldo);
+  }
+}
+
+function BalaTripla(cx, cy, dmg, speed = 8.5, delay = 150) {
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      if (!gameRunning) return;
+      const dx = P.x - cx, dy = P.y - cy;
+      const len = Math.hypot(dx, dy) || 1;
+      spawnBullet(cx, cy, dx / len * speed, dy / len * speed, true, dmg);
+    }, i * delay);
+  }
+}
+
+function Laser(cx, cy, dmg, tempo, isRonaldo = false) {
+  const { width, height } = arena.getBoundingClientRect();
+  const diagonal = Math.ceil(Math.hypot(width, height));
+
+  // Aponta para o jogador NO MOMENTO do aviso (para dar chance de desviar)
+  const angle = Math.atan2((P.y + 19) - cy, (P.x + 19) - cx);
+
+  // Elemento do laser (nasce como aviso, vira ativo depois)
+  const el = document.createElement('div');
+  el.className = 'laser-warn' + (isRonaldo ? ' laser-ronaldo' : '');
+  el.style.cssText = `
+    left:${cx - diagonal}px;
+    top:${cy}px;
+    width:${diagonal * 2}px;
+    transform-origin:${diagonal}px center;
+    transform:rotate(${angle}rad);
+  `;
+  arena.appendChild(el);
+
+  // Pisca durante o aviso para chamar atenção do jogador
+  const flashes = Math.max(4, Math.floor(tempo / 120));
+  let tick = 0;
+  const blink = setInterval(() => {
+    if (!el.parentNode) { clearInterval(blink); return; }
+    el.style.opacity = (tick++ % 2 === 0) ? '0.25' : '1';
+  }, tempo / flashes);
+
+  setTimeout(() => {
+    if (!gameRunning) { clearInterval(blink); el.remove(); return; }
+    clearInterval(blink);
+
+    el.className = 'laser-active' + (isRonaldo ? ' laser-ronaldo' : '');
+    el.style.opacity = '1';
+
+    const pcx = P.x + 19, pcy = P.y + 19;
+    const cos = Math.cos(angle), sin = Math.sin(angle);
+    const perp = Math.abs((pcx - cx) * sin - (pcy - cy) * cos);
+
+    if (perp < 20 && P.invincible <= 0) {
+      P.hp -= Math.floor(dmg);
+      P.invincible = 25;
+      floater(P.x, P.y - 12, `-${dmg} LASER`, 'var(--red)');
+      playerEl.classList.add('hit');
+      setTimeout(() => playerEl.classList.remove('hit'), 200);
+      if (P.hp <= 0) { endGame(false); return; }
+      updateHud();
+    }
+
+    // Remove o laser após a animação ativa
+    setTimeout(() => el.remove(), 380);
+  }, tempo);
+}
+
+
 function enemyShoot(e, dt) {
   if (e.tag === 'RONALDO') return;
   e.shootCd -= dt * 0.06;
@@ -581,31 +723,22 @@ function enemyShoot(e, dt) {
   const cx = e.x + e.size / 2 - 4;
   const cy = e.y + e.size / 2 - 4;
 
-  if (e.shoots) {
-    const dx = P.x - e.x, dy = P.y - e.y;
-    const len = Math.hypot(dx, dy) || 1;
-    spawnBullet(cx, cy, dx / len * 4.5, dy / len * 4.5, true, e.atk);
+  if (e.shoots) {                    
+    BalaUnica(cx, cy, e.atk);
     e.shootCd = 70;
-  } else if (e.tag === 'VORTEX') {
+
+  } else if (e.tag === 'VORTEX') {   
     e.angleOffset += 0.25;
-    for (let i = 0; i < 5; i++) {
-      const a = e.angleOffset + i * Math.PI * 2 / 5;
-      spawnBullet(cx, cy, Math.cos(a) * 4.8, Math.sin(a) * 4.8, true, e.atk);
-    }
+    Laser(cx, cy, e.atk * 1.2, 1000);
+    BalaSpiral(cx, cy, e.angleOffset, e.atk);
     e.shootCd = 10;
-  } else if (e.tag === 'VOID') {
+
+  } else if (e.tag === 'VOID') {     
     if (Math.random() < 0.5) {
-      for (let a = 0; a < Math.PI * 2; a += Math.PI / 6)
-        spawnBullet(cx, cy, Math.cos(a) * 6.2, Math.sin(a) * 6.2, true, e.atk);
+      AnelDeBala(cx, cy, e.atk);
       e.shootCd = 40;
     } else {
-      for (let i = 0; i < 3; i++)
-        setTimeout(() => {
-          if (!e.alive || !gameRunning) return;
-          const dx = P.x - cx, dy = P.y - cy;
-          const len = Math.hypot(dx, dy) || 1;
-          spawnBullet(cx, cy, dx / len * 8.5, dy / len * 8.5, true, e.atk);
-        }, i * 150);
+      BalaTripla(cx, cy, e.atk);
       e.shootCd = 60;
     }
   }
@@ -620,7 +753,7 @@ function updateRonaldo(e, dt) {
 
   if (e.dashState === 'idle') {
     if (e.dashCooldown <= 0) {
-      // Charge toward player
+      
       const tdx = (P.x + 19) - (e.x + e.size / 2);
       const tdy = (P.y + 19) - (e.y + e.size / 2);
       const tlen = Math.hypot(tdx, tdy) || 1;
@@ -631,12 +764,12 @@ function updateRonaldo(e, dt) {
       e.el.classList.add('ronaldo-dashing');
       floater(e.x + e.size / 2, e.y, 'DASH!', '#f5c842');
     } else {
-      // Slow walk toward player
+      
       const sdx = (P.x + 19) - (e.x + e.size / 2);
       const sdy = (P.y + 19) - (e.y + e.size / 2);
       const slen = Math.hypot(sdx, sdy) || 1;
-      e.x += sdx / slen * 0.4 * dtf;
-      e.y += sdy / slen * 0.4 * dtf;
+      e.x += sdx / slen * 0.8 * dtf;
+      e.y += sdy / slen * 0.8 * dtf;
     }
   }
 
@@ -657,6 +790,10 @@ function updateRonaldo(e, dt) {
       floater(e.x + e.size / 2, e.y, 'SPIRAL!', '#f5c842');
       addLog('Ronaldo — PRE-DASH SPIRAL!', 'gold');
       e.spiralFired = true;
+    }
+
+    if (e.dashDuration) {
+       Laser(e.x + e.size / 2, e.y + e.size / 2, e.atk * 1.5, 1000, true);
     }
 
     const hitWall = e.x <= 2 || e.x >= width - e.size - 2 || e.y <= 2 || e.y >= height - e.size - 2;
@@ -743,7 +880,7 @@ function updateBullets(dt) {
       // Colisão de bala inimiga  vs player
       if (b.x > P.x && b.x < P.x + 38 && b.y > P.y && b.y < P.y + 38) {
         const dmg = Math.floor((b.dmg || 20) + Math.random() * 8);
-        P.hp -= dmg; P.invincible = 15;
+        P.hp -= Math.floor(dmg); P.invincible = 15;
         floater(P.x, P.y - 10, '-' + dmg, 'var(--red)');
         playerEl.classList.add('hit');
         setTimeout(() => playerEl.classList.remove('hit'), 150);
@@ -765,6 +902,7 @@ function spawnWave(num) {
     if (!bossIdx) { endGame(true); return; }
     addLog(`— boss ${num}/3 —`, 'danger');
     bossSpawning = true;
+    alternarMusica(musicaBoss);
     setTimeout(() => {
       if (!gameRunning) return;
       bossSpawning = false;
@@ -781,6 +919,7 @@ function spawnWave(num) {
       6: 'RONALDO ENTROU EM CAMPO! IMPOSSÍVEL DE PARAR!',
     };
     addLog(msgs[bossIdx], bossIdx === 6 ? 'gold' : 'danger');
+    alternarMusica(musicaBoss);
     showBoss(spawnEnemy(bossIdx), bossIdx);
     return;
   }
@@ -873,6 +1012,11 @@ function loop(ts) {
 function endGame(win) {
   gameRunning = false;
   cancelAnimationFrame(animId);
+  if(musicaAtual) {
+    musicaAtual.pause();
+    musicaAtual.currentTime = 0;
+    musicaAtual = null;
+  }
   overlay.className = 'show ' + (win ? 'win' : 'gameover');
   overlayTitle.textContent = win ? 'VITÓRIA' : 'GAME OVER';
   overlaySub.textContent = win
@@ -899,6 +1043,7 @@ function restartGame() {
   bossHud.style.display = 'none'; activeBoss = null;
   initPlayer();
   updateHud();
+  alternarMusica(gameMode === 'bossrush' ? musicaBoss : musicaNormal);
   if (gameMode === 'bossrush') {
     addLog('BOSS RUSH! Enfrente os 3 bosses!', 'danger');
     spawnWave(1);
