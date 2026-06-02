@@ -2,8 +2,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-HTML5%20%2F%20CSS3%20%2F%20JS-accent?style=for-the-badge&labelColor=1a1a1e&color=c8f53a" alt="Tech Stack">
-  <img src="https://img.shields.io/badge/Genre-Bullet%20Hell%20%2F%20RPG-blue?style=for-the-badge&labelColor=1a1a1e&color=3ab4f5" alt="Gênero">
-  <img src="https://img.shields.io/badge/Waves-10%20Max-red?style=for-the-badge&labelColor=1a1a1e&color=f53a3a" alt="Ondas">
+  <img src="https://img.shields.io/badge/Genre-Bullet%20Hell%20%2F%20-blue?style=for-the-badge&labelColor=1a1a1e&color=3ab4f5" alt="Gênero">
+  <img src="https://img.shields.io/badge/Waves-15%20Max-red?style=for-the-badge&labelColor=1a1a1e&color=f53a3a" alt="Ondas">
 </p>
 
 > **BLOCOS SHOT** é um jogo de tiro *arcade-survival* minimalista e frenético rodando nativamente no navegador. Enfrente hordas de blocos inimigos, suba de nível, melhore seus atributos e tente sobreviver até a Wave 10 para derrotar o Vazio.
