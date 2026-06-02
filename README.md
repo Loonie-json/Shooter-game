@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-HTML5%20%2F%20CSS3%20%2F%20JS-accent?style=for-the-badge&labelColor=1a1a1e&color=c8f53a" alt="Tech Stack">
-  <img src="https://img.shields.io/badge/Genre-Bullet%20Hell%20%2F%20-blue?style=for-the-badge&labelColor=1a1a1e&color=3ab4f5" alt="Gênero">
+  <img src="https://img.shields.io/badge/Genre-Bullet%20Hell-blue?style=for-the-badge&labelColor=1a1a1e&color=3ab4f5" alt="Gênero">
   <img src="https://img.shields.io/badge/Waves-15%20Max-red?style=for-the-badge&labelColor=1a1a1e&color=f53a3a" alt="Ondas">
 </p>
 
